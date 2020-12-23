@@ -1,15 +1,32 @@
 #include"../Common/Common.h"
 #include<osgViewer/Viewer>
 #include<osgDB/ReadFile>
+#include<osg/AnimationPath>
 #include<osgGA/GUIActionAdapter>
 #include<osgViewer/ViewerEventHandlers>
 #include<osg/MatrixTransform>
+#include <osg/PositionAttitudeTransform>
 #include<iostream>
 #ifdef _DEBUG
 #pragma comment(lib,"../Debug/Common.lib");
 #else
 #pragma comment(lib,"../Release/Common.lib");
 #endif 
+
+void ExportANode()
+{
+	osg::ref_ptr<osg::Node> node=osgDB::readNodeFile("cow.osg");
+	osg::ref_ptr<osg::MatrixTransform> max=new osg::MatrixTransform;
+
+	max->addChild(node);
+	max->setMatrix(osg::Matrix::translate(50.0,0.0,0.0));
+
+	osgDB::ReaderWriter::WriteResult result=osgDB::Registry::instance()->writeNode(*max.get(),"TrCow.osg",osgDB::Registry::instance()->getOptions());
+	if(result.success())
+	{
+		osg::notify(osg::NOTICE)<<"Read Node Success"<<std::endl;
+	}
+}
 
 osg::ref_ptr<osg::Group> MatrixOperation()
 {
@@ -29,7 +46,7 @@ osg::ref_ptr<osg::Group> MatrixOperation()
 	mx3->addChild(node.get());
 	mx3->setMatrix(osg::Matrix::translate(-5.0,0.0,0.0));
 	mx4->addChild(mx3);
-	mx4->setUpdateCallback(new osg::AnimationPathCallback(osg::Vec3(0.0,0.0,0.0),osg::Z_AXIS,1.0));
+	mx4->setUpdateCallback(new osg::AnimationPathCallback(osg::Vec3(0.0,0.0,0.0),osg::Z_AXIS,5.0));
 
 	group->addChild(node.get());
 	group->addChild(mx2.get());
@@ -39,7 +56,16 @@ osg::ref_ptr<osg::Group> MatrixOperation()
 
 int main(){
 	osg::ref_ptr<osgViewer::Viewer>view=new osgViewer::Viewer;
-	view->setSceneData(MatrixOperation());
+	osg::ref_ptr<osg::PositionAttitudeTransform>pat=new osg::PositionAttitudeTransform;
 
+	//view->setSceneData(MatrixOperation());
+	//ExportANode();
+	osg::ref_ptr<osg::Group> group=new osg::Group;
+	group->addChild(osgDB::readNodeFile("glider.osg"));
+	pat->addChild(osgDB::readNodeFile("TrCow.osg"));
+	pat->setPosition(osg::Vec3d(-50,0,0));
+	group->addChild(pat);
+
+	view->setSceneData(group);
 	return view->run();
 }
